@@ -96,14 +96,28 @@ Let's write the results of our 2 queries, Nmap and Dirsearch, into different fil
 
 ```
 #!/bin/bash
-echo "Creating directory $1_recon." 1
-mkdir $1_recon 2
-nmap $1 > $1_recon/nmap 3
+echo "Creating directory $1_recon."
+mkdir $1_recon
+nmap $1 > $1_recon/nmap
 echo "The results of nmap scan are stored in $1_recon/nmap."
-dirsearch -u $1 -e php 4 --simple-report=$1_recon/dirsearch
+dirsearch -u $1 -e php --simple-report=$1_recon/dirsearch
 echo "The results of dirsearch scan are stored in $1_recon/dirsearch."
 ```
 
 note the line `--simple-report=$1_recon/dirsearch`. This is some variable assignment. Treat it like we're writing a .env, with no spaces around the `=` operator.
 
-Now that we have variable assignment available to us, let's
+Now that we have variable assignment available to us, let's freshen up this script a bit:
+
+```
+#!/bin/bash
+
+DOMAIN=$1
+DIRECTORY=${DOMAIN}_recon
+
+echo "Creating directory $DIRECTORY."
+mkdir $DIRECTORY
+nmap $DOMAIN > $DIRECTORY/nmap
+echo "The results of nmap scan are stored in $DIRECTORY/nmap."
+dirsearch -u $DOMAIN -e php –simple-report=$DIRECTORY/dirsearch
+echo "The results of dirsearch scan are stored in $DIRECTORY/dirsearch."
+```
