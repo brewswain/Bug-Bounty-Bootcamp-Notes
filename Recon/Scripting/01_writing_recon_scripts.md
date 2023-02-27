@@ -104,8 +104,9 @@ dirsearch -u $1 -e php --simple-report=$1_recon/dirsearch
 echo "The results of dirsearch scan are stored in $1_recon/dirsearch."
 ```
 
-note the line `--simple-report=$1_recon/dirsearch`. This is some variable assignment. Treat it like we're writing a .env, with no spaces around the `=` operator.
+note the line `--simple-report=$1_recon/dirsearch`. This tells dirsearch where to generate a report.
 
+Also, we can assign variables by using the format of `VARIABLE_NAME=foobar`. Treat it like we're writing a .env, with no spaces around the `=` operator.
 Now that we have variable assignment available to us, let's freshen up this script a bit:
 
 ```
