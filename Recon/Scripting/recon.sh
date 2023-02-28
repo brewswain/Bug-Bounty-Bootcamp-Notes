@@ -8,6 +8,7 @@ OUTPUT_FILE=${DOMAIN}_${DATE}.txt
 
 echo "Creating directory $DOMAIN."
 mkdir -p $DOMAIN
+if [$2 == "nmap-only"]
 echo "Creating subdirectory $DIRSEARCH_DIRECTORY."
 mkdir -p $DIRSEARCH_DIRECTORY
 touch $DIRSEARCH_DIRECTORY/$OUTPUT_FILE

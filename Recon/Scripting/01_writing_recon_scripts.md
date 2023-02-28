@@ -113,12 +113,37 @@ Now that we have variable assignment available to us, let's freshen up this scri
 #!/bin/bash
 
 DOMAIN=$1
-DIRECTORY=${DOMAIN}_recon
+DATE=$(date +"%Y-%m-%d_%H-%M-%S")
 
-echo "Creating directory $DIRECTORY."
-mkdir $DIRECTORY
-nmap $DOMAIN > $DIRECTORY/nmap
+DIRSEARCH_DIRECTORY=$DOMAIN/dirsearch
+OUTPUT_FILE=${DOMAIN}_${DATE}.txt
+
+echo "Creating directory $DOMAIN."
+mkdir -p $DOMAIN
+echo "Creating subdirectory $DIRSEARCH_DIRECTORY."
+mkdir -p $DIRSEARCH_DIRECTORY
+touch $DIRSEARCH_DIRECTORY/$OUTPUT_FILE
+echo "Creating Dirsearch Output file: $OUTPUT_FILE"
+nmap $DOMAIN > $DOMAIN/nmap
 echo "The results of nmap scan are stored in $DIRECTORY/nmap."
-dirsearch -u $DOMAIN -e php –simple-report=$DIRECTORY/dirsearch
-echo "The results of dirsearch scan are stored in $DIRECTORY/dirsearch."
+dirsearch -u $DOMAIN -e php --output=/home/kali/Desktop/Scripts/Recon/$DIRSEARCH_DIRECTORY/${OUTPUT_FILE} --format=plain
+echo "The results of dirsearch scan are stored in $DIRSEARCH_DIRECTORY."
+```
+
+---
+
+## Adding Options to Choose the Tools to Run
+
+Let's assume that we don't want to run a complete suite of tools every single time. Conditionals!
+
+```
+if [ condition 1 ]
+then
+   # Do thing
+elif [ condition 2]
+then
+   # Do other thing
+else
+   # Default thing to run
+fi
 ```
