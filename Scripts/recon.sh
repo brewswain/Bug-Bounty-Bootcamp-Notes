@@ -74,9 +74,8 @@ if [ $INTERACTIVE ];then
     while [ $INPUT != "quit" ];do
         echo "Please enter a domain!"
         read INPUT
-        if [ $INPUT != "quit" ];then 3
+        if [ $INPUT != "quit" ];then
             scan_domain $INPUT
-            100   Chapter 5
             report_domain $INPUT
         fi
     done
