@@ -445,3 +445,129 @@ cat $DIRECTORY/dirsearch >> $DIRECTORY/report
 echo "Results for crt.sh:" >> $DIRECTORY/report
 jq -r ".[] | .name_value" $DIRECTORY/crt >> $DIRECTORY/report
 ```
+
+---
+
+## Scanning Multiple Domains
+
+This is all well and good, but let's say we want to scan multiple domains at once. For example, we know that facebook owns `facebook.com` and `fbcdn.net`.
+We want our tool to be able to distinguish which arguments specify the target's MODE and which argument specifies a domain:
+
+```
+./recon.sh facebook.com fbcdn.net nmap-only
+```
+
+As we can see above, there's no real way for our script to tell it apart as it is. However, we also know the solution to this--Flags! lets set up a flag for our script using `getopts`:
+
+```
+getopts "m:" OPTION
+MODE=$OPTARG
+```
+
+Now our tool should recognise the flag `-m` that'll help it specify which mode we wish to use. The important thing to note is that `getopts` stops parsing arguments when it encounters an argument that doesn't start with the `-` character. This means that we need to place our scan mode _before_ our domain arguments:
+
+```
+./recon.sh -m nmap-only facebook.com fbcdn.net
+```
+
+Now let's set up some iteration to get to use multiple domains:
+
+```
+for i in "${@:$OPTIND:$#}"
+do
+   #do scans for $1
+done
+```
+
+Ok so that looks a bit ugly, but we're creating an array that contains our command line arguments besides the ones that we already parsed using `getopts`.
+
+-  The array stores the index of the first argument after the options into a variable called `$OPTIND`.
+-  `$@` Represents the array containing all our input arguments
+-  `$#` Is the number of command line arguments passed in.
+-  `"${@:OPTIND:}"` slices our array to remove our MODE argument.
+
+Noting the above, slicing syntax in bash is pretty ugly but here's how it works:
+
+```
+"${INPUT_ARRAY:START_INDEX:END_INDEX}"
+```
+
+Aite, let's implement this into our code now:
+
+```
+#!/bin/bash
+nmap_scan()
+{
+    echo "Using nmap takes a bit of time with no visible progress, the script isn't frozen (I hope)"
+    nmap $DOMAIN > $DOMAIN/nmap
+    echo "The results of nmap scan are stored in $DIRECTORY/nmap."
+}
+dirsearch_scan()
+{
+
+    dirsearch -u $DOMAIN -e php --output=/home/kali/Desktop/Scripts/Recon/$DIRSEARCH_DIRECTORY/${OUTPUT_FILE} --format=plain
+    echo "The results of dirsearch scan are stored in $DIRSEARCH_DIRECTORY."
+}
+crt_scan()
+{
+    curl "https://crt.sh/?q=$DOMAIN&output=json" -o $CRT_DIRECTORY
+    echo "The results of cert parsing is stored in $CRT_DIRECTORY."
+}
+
+getopts "m:" OPTION
+MODE=$OPTARG
+
+for i in "${@:$OPTIND:$#}"
+do
+    DOMAIN=$1
+    DATE=$(date +"%Y-%m-%d")
+    # DATE=$(date +"%Y-%m-%d_%H-%M-%S")
+
+    DIRSEARCH_DIRECTORY=$DOMAIN/dirsearch
+    CRT_DIRECTORY=$DOMAIN/crt
+    OUTPUT_FILE=${DOMAIN}_${DATE}.txt
+
+    echo "Creating directory $DOMAIN."
+    mkdir -p $DOMAIN
+    echo "Creating subdirectory $DIRSEARCH_DIRECTORY."
+    mkdir -p $DIRSEARCH_DIRECTORY
+    touch $DIRSEARCH_DIRECTORY/$OUTPUT_FILE
+    echo "Creating Dirsearch Output file: $OUTPUT_FILE"
+
+    case $MODE in
+        nmap-only)
+            nmap_scan
+        ;;
+        dirsearch-only)
+            dirsearch_scan
+        ;;
+        crt-only)
+            crt_scan
+        ;;
+        *)
+            nmap_scan
+            dirsearch_scan
+            crt_scan
+        ;;
+    esac
+
+    echo "Generating Recon report from output file(s)."
+    echo "This scan was created on $DATE > $DOMAIN/report."
+    if [ -f $DOMAIN/nmap ]; then
+        echo "Results for Nmap:" >> $DOMAIN/report
+        grep -E "^\s*\S+\s+\S+\s+\S+\s*$" $DOMAIN/nmap >> $DOMAIN/report
+    fi
+
+    if [ -f $DOMAIN/dirsearch/$OUTPUT_FILE ]; then
+        echo "Results for Dirsearch:" >> $DOMAIN/report
+        cat $DOMAIN/dirsearch/$OUTPUT_FILE >> $DOMAIN/report
+    fi
+
+    if [ -f $DOMAIN/crt ]; then
+        echo "Results for crt.sh:" >> $DOMAIN/report
+        jq -r ".[] | .name_value" $DOMAIN/crt >> $DOMAIN/report
+    fi
+done
+```
+
+Please note that we added some elif statements at the end to determine whether our files exist so that we know if to generate a report for that scan type.
