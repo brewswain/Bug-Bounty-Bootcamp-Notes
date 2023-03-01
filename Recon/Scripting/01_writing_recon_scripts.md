@@ -245,3 +245,203 @@ case $2 in
       ;;
 esac
 ```
+
+Definitely neater! However, we can still do better. Let's work functions into the mix:
+
+```
+#!/bin/bash
+DOMAIN=$1
+DATE=$(date +"%Y-%m-%d_%H-%M-%S")
+
+DIRSEARCH_DIRECTORY=$DOMAIN/dirsearch
+CRT_DIRECTORY=$DOMAIN/crt
+OUTPUT_FILE=${DOMAIN}_${DATE}.txt
+
+echo "Creating directory $DOMAIN."
+mkdir -p $DOMAIN
+echo "Creating subdirectory $DIRSEARCH_DIRECTORY."
+mkdir -p $DIRSEARCH_DIRECTORY
+touch $DIRSEARCH_DIRECTORY/$OUTPUT_FILE
+echo "Creating Dirsearch Output file: $OUTPUT_FILE"
+
+nmap_scan()
+{
+    nmap $DOMAIN > $DOMAIN/nmap
+    echo "The results of nmap scan are stored in $DIRECTORY/nmap."
+}
+dirsearch_scan()
+{
+
+    dirsearch -u $DOMAIN -e php --output=/home/kali/Desktop/Scripts/Recon/$DIRSEARCH_DIRECTORY/${OUTPUT_FILE} --format=plain
+    echo "The results of dirsearch scan are stored in $DIRSEARCH_DIRECTORY."
+}
+crt_scan()
+{
+    curl "https://crt.sh/?q=$DOMAIN&output=json" -o $CRT_DIRECTORY
+    echo "The results of cert parsing is stored in $CRT_DIRECTORY."
+}
+
+case $2 in
+    nmap-only)
+        nmap_scan
+    ;;
+    dirsearch-only)
+        dirsearch_scan
+    ;;
+    crt-only)
+        crt_scan
+    ;;
+    *)
+        nmap_scan
+        dirsearch_scan
+        crt_scan
+    ;;
+esac
+```
+
+Nice. We removed a bunch of repetition, and even have our logic clumped together, which helps with debugging.
+
+An interesting thing with bash is that all bash variables are global except for input params. Lexical scope's crying in the club rn. Basically that means
+that using stuff like `$1` _inside_ of a function refers to the first argument that said function was called with. Other than that, everything's available globally.
+
+An example of what I mean with the function:
+
+```
+nmap_scan()
+{
+ nmap $1 > $DIRECTORY/nmap
+ echo "The results of nmap scan are stored in $DIRECTORY/nmap."
+}
+nmap_scan
+```
+
+In the above, `$1` refers to the first argument that `nmap_scan()` is called with, not the argument that our `recon.sh` script itself was called with.
+Very important but simple distinction.
+
+---
+
+## Parsing the Results
+
+Ok, so we have our script up and running. Let's continue improving it! Instead of us manually opening each file, let's add some `grep` functionality:
+
+```
+grep password file.txt
+```
+
+The above tells grep to look for "password" inside of a file called `file.txt`, then print the matching results out. To make it fit in with our script, let's say we want to see if our target has port 80 open:
+
+```
+grep 80 TARGET_DIRECTORY/nmap
+
+80/tcp open http
+```
+
+Grep is also able to use regex (GREP === Global Regular Expression Print btw):
+
+```
+grep -E "^\S+\s+\S+\s+\S+$" DIRECTORY/nmap > DIRECTORY/nmap_cleaned
+```
+
+I'm not gonna add regex terms here, they're annoying. But they ARE pretty powerful so keep em in mind.
+
+The above is pretty interesting since it acts like a filter--`\s`
+matches any whitespace, and `\S` matches any non-whitespace. Therefore,`\s+` would match any whitespace one or more characters long, and `\S+` would
+match any non-whitespace one or more characters long. This regex pattern
+specifies that we should extract lines that contain three strings separated by
+two whitespaces.
+
+Basically, we should get this output:
+
+```
+PORT STATE SERVICE
+22/tcp open ssh
+25/tcp filtered smtp
+80/tcp open http
+135/tcp filtered msrpc
+139/tcp filtered netbios-ssn
+445/tcp filtered microsoft-ds
+9929/tcp open nping-echo
+31337/tcp open Elite
+```
+
+Let's add some optional spaces around our search string:
+
+```
+"^\s*\S+\s+\S+\s+\S+\s*$"
+```
+
+---
+
+## Building a Master Report
+
+Let's make a master report from all 3 output files! First of all, `crt.sh` gives us a JSON, so we need to parse it. there's a utility called `jq` that'll do it for us:
+
+```
+jq -r ".[] | .name_value" $DOMAIN/crt
+```
+
+-  `-r` tells `jq` to write to the output to standard format rather than as JSON string.
+-  `.[]` iterates through the array within the JSON
+-  `.name_value` extracts the `name_value` field of each item
+
+Let's combine all output files into a master report now:
+
+```
+#!/bin/bash
+DOMAIN=$1
+DATE=$(date +"%Y-%m-%d_%H-%M-%S")
+
+DIRSEARCH_DIRECTORY=$DOMAIN/dirsearch
+CRT_DIRECTORY=$DOMAIN/crt
+OUTPUT_FILE=${DOMAIN}_${DATE}.txt
+
+echo "Creating directory $DOMAIN."
+mkdir -p $DOMAIN
+echo "Creating subdirectory $DIRSEARCH_DIRECTORY."
+mkdir -p $DIRSEARCH_DIRECTORY
+touch $DIRSEARCH_DIRECTORY/$OUTPUT_FILE
+echo "Creating Dirsearch Output file: $OUTPUT_FILE"
+
+nmap_scan()
+{
+    nmap $DOMAIN > $DOMAIN/nmap
+    echo "The results of nmap scan are stored in $DIRECTORY/nmap."
+}
+dirsearch_scan()
+{
+
+    dirsearch -u $DOMAIN -e php --output=/home/kali/Desktop/Scripts/Recon/$DIRSEARCH_DIRECTORY/${OUTPUT_FILE} --format=plain
+    echo "The results of dirsearch scan are stored in $DIRSEARCH_DIRECTORY."
+}
+crt_scan()
+{
+    curl "https://crt.sh/?q=$DOMAIN&output=json" -o $CRT_DIRECTORY
+    echo "The results of cert parsing is stored in $CRT_DIRECTORY."
+}
+
+case $2 in
+    nmap-only)
+        nmap_scan
+    ;;
+    dirsearch-only)
+        dirsearch_scan
+    ;;
+    crt-only)
+        crt_scan
+    ;;
+    *)
+        nmap_scan
+        dirsearch_scan
+        crt_scan
+    ;;
+esac
+
+echo "Generating Recon report from output file(s)."
+echo "This scan was created on $DATE > $DIRECTORY/report
+echo "Results for Nmap:" >> $DIRECTORY/report
+grep -E "^\s*\S+\s+\S+\s+\S+\s*$" $DIRECTORY/nmap >> $DIRECTORY/report
+echo "Results for Dirsearch:" >> $DIRECTORY/report
+cat $DIRECTORY/dirsearch >> $DIRECTORY/report
+echo "Results for crt.sh:" >> $DIRECTORY/report
+jq -r ".[] | .name_value" $DIRECTORY/crt >> $DIRECTORY/report
+```
