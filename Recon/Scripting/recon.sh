@@ -17,12 +17,20 @@ crt_scan()
     echo "The results of cert parsing is stored in $CRT_DIRECTORY."
 }
 
-getopts "m:" OPTION
-MODE=$OPTARG
+
+while getopts "m:" OPTION; do
+    case $OPTION in
+        m)MODE=$OPTARG
+        ;;
+        *)echo "error" >&2
+            exit 1
+    esac
+done
 
 for i in "${@:$OPTIND:$#}"
 do
-    DOMAIN=$1
+    echo "beginning operations for $i."
+    DOMAIN=$i
     DATE=$(date +"%Y-%m-%d")
     # DATE=$(date +"%Y-%m-%d_%H-%M-%S")
     
@@ -35,7 +43,6 @@ do
     echo "Creating subdirectory $DIRSEARCH_DIRECTORY."
     mkdir -p $DIRSEARCH_DIRECTORY
     touch $DIRSEARCH_DIRECTORY/$OUTPUT_FILE
-    echo "Creating Dirsearch Output file: $OUTPUT_FILE"
     
     case $MODE in
         nmap-only)
@@ -61,7 +68,7 @@ do
         grep -E "^\s*\S+\s+\S+\s+\S+\s*$" $DOMAIN/nmap >> $DOMAIN/report
     fi
     
-    if [ -f $DOMAIN/dirsearch/$OUTPUT_FILE ]; then
+    if [ -s $DOMAIN/dirsearch/$OUTPUT_FILE ]; then
         echo "Results for Dirsearch:" >> $DOMAIN/report
         cat $DOMAIN/dirsearch/$OUTPUT_FILE >> $DOMAIN/report
     fi
