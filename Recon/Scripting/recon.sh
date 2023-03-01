@@ -1,41 +1,25 @@
 #!/bin/bash
-nmap_scan()
-{
-    echo "Using nmap takes a bit of time with no visible progress, the script isn't frozen (I hope)"
-    nmap $DOMAIN > $DOMAIN/nmap
-    echo "The results of nmap scan are stored in $DIRECTORY/nmap."
-}
-dirsearch_scan()
-{
-    
-    dirsearch -u $DOMAIN -e php --output=/home/kali/Desktop/Scripts/Recon/$DIRSEARCH_DIRECTORY/${OUTPUT_FILE} --format=plain
-    echo "The results of dirsearch scan are stored in $DIRSEARCH_DIRECTORY."
-}
-crt_scan()
-{
-    curl "https://crt.sh/?q=$DOMAIN&output=json" -o $CRT_DIRECTORY
-    echo "The results of cert parsing is stored in $CRT_DIRECTORY."
-}
+source ./scan.lib
 
-
-while getopts "m:" OPTION; do
+while getopts "m:i" OPTION; do
     case $OPTION in
-        m)MODE=$OPTARG
+        m)
+            MODE=$OPTARG
+        ;;
+        i)
+            INTERACTIVE=true
         ;;
         *)echo "error" >&2
             exit 1
     esac
 done
 
-for i in "${@:$OPTIND:$#}"
-do
-    echo "beginning operations for $i."
-    DOMAIN=$i
+scan_domain()
+{
+    DOMAIN=$1
     DATE=$(date +"%Y-%m-%d")
     # DATE=$(date +"%Y-%m-%d_%H-%M-%S")
-    
     DIRSEARCH_DIRECTORY=$DOMAIN/dirsearch
-    CRT_DIRECTORY=$DOMAIN/crt
     OUTPUT_FILE=${DOMAIN}_${DATE}.txt
     
     echo "Creating directory $DOMAIN."
@@ -60,6 +44,12 @@ do
             crt_scan
         ;;
     esac
+}
+
+report_domain()
+{
+    DOMAIN=$1
+    DATE=$(date +"%Y-%m-%d")
     
     echo "Generating Recon report from output file(s)."
     echo "This scan was created on $DATE > $DOMAIN/report."
@@ -77,4 +67,23 @@ do
         echo "Results for crt.sh:" >> $DOMAIN/report
         jq -r ".[] | .name_value" $DOMAIN/crt >> $DOMAIN/report
     fi
-done
+}
+
+if [ $INTERACTIVE ];then
+    INPUT="BLANK"
+    while [ $INPUT != "quit" ];do
+        echo "Please enter a domain!"
+        read INPUT
+        if [ $INPUT != "quit" ];then 3
+            scan_domain $INPUT
+            100   Chapter 5
+            report_domain $INPUT
+        fi
+    done
+else
+    for i in "${@:$OPTIND:$#}";do
+        scan_domain $i
+        report_domain $i
+        
+    done
+fi
