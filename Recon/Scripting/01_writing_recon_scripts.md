@@ -147,3 +147,45 @@ else
    # Default thing to run
 fi
 ```
+
+Let's say that we want to specify the scan `MODE`:
+
+```
+./recon.sh scanme.nmap.org MODE
+```
+
+we can do something like this:
+
+```
+#!/bin/bash
+
+DOMAIN=$1
+DATE=$(date +"%Y-%m-%d_%H-%M-%S")
+
+DIRSEARCH_DIRECTORY=$DOMAIN/dirsearch
+OUTPUT_FILE=${DOMAIN}_${DATE}.txt
+
+echo "Creating directory $DOMAIN."
+mkdir -p $DOMAIN
+echo "Creating subdirectory $DIRSEARCH_DIRECTORY."
+mkdir -p $DIRSEARCH_DIRECTORY
+touch $DIRSEARCH_DIRECTORY/$OUTPUT_FILE
+echo "Creating Dirsearch Output file: $OUTPUT_FILE"
+
+if [ $2 == "nmap-only" ]
+then
+    nmap $DOMAIN > $DOMAIN/nmap
+    echo "The results of nmap scan are stored in $DIRECTORY/nmap."
+elif [ $2 == "dirsearch-only" ]
+then
+    dirsearch -u $DOMAIN -e php --output=/home/kali/Desktop/Scripts/Recon/$DIRSEARCH_DIRECTORY/${OUTPUT_FILE} --format=plain
+    echo "The results of dirsearch scan are stored in $DIRSEARCH_DIRECTORY."
+else
+    nmap $DOMAIN > $DOMAIN/nmap
+    echo "The results of nmap scan are stored in $DIRECTORY/nmap."
+    dirsearch -u $DOMAIN -e php --output=/home/kali/Desktop/Scripts/Recon/$DIRSEARCH_DIRECTORY/${OUTPUT_FILE} --format=plain
+    echo "The results of dirsearch scan are stored in $DIRSEARCH_DIRECTORY."
+fi
+```
+
+Nice! We can now add some flags to our script to decide if we want to exclusively only use one specific utility or not.
