@@ -51,10 +51,10 @@ case $2 in
 esac
 
 echo "Generating Recon report from output file(s)."
-echo "This scan was created on $DATE > $DIRECTORY/report."
-echo "Results for Nmap:" >> $DIRECTORY/report
-grep -E "^\s*\S+\s+\S+\s+\S+\s*$" $DIRECTORY/nmap >> $DIRECTORY/report
-echo "Results for Dirsearch:" >> $DIRECTORY/report
-cat $DIRECTORY/dirsearch >> $DIRECTORY/report
-echo "Results for crt.sh:" >> $DIRECTORY/report
-jq -r ".[] | .name_value" $DIRECTORY/crt >> $DIRECTORY/report
+echo "This scan was created on $DATE > $DOMAIN/report."
+echo "Results for Nmap:" >> $DOMAIN/report
+grep -E "^\s*\S+\s+\S+\s+\S+\s*$" $DOMAIN/nmap >> $DOMAIN/report
+echo "Results for Dirsearch:" >> $DOMAIN/report
+cat $DOMAIN/dirsearch >> $DOMAIN/report
+echo "Results for crt.sh:" >> $DOMAIN/report
+jq -r ".[] | .name_value" $DOMAIN/crt >> $DOMAIN/report
