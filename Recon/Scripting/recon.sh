@@ -1,6 +1,7 @@
 #!/bin/bash
 DOMAIN=$1
-DATE=$(date +"%Y-%m-%d_%H-%M-%S")
+DATE=$(date +"%Y-%m-%d")
+# DATE=$(date +"%Y-%m-%d_%H-%M-%S")
 
 DIRSEARCH_DIRECTORY=$DOMAIN/dirsearch
 CRT_DIRECTORY=$DOMAIN/crt
@@ -13,11 +14,10 @@ echo "Creating subdirectory $DIRSEARCH_DIRECTORY."
 mkdir -p $DIRSEARCH_DIRECTORY
 touch $DIRSEARCH_DIRECTORY/$OUTPUT_FILE
 echo "Creating Dirsearch Output file: $OUTPUT_FILE"
-echo "Creating Master Report subdirectory"
-mkdir -p $MASTER_REPORT_DIRECTORY
 
 nmap_scan()
 {
+    echo "Using nmap takes a bit of time with no visible progress, the script isn't frozen (I hope)"
     nmap $DOMAIN > $DOMAIN/nmap
     echo "The results of nmap scan are stored in $DIRECTORY/nmap."
 }
@@ -55,6 +55,6 @@ echo "This scan was created on $DATE > $DOMAIN/report."
 echo "Results for Nmap:" >> $DOMAIN/report
 grep -E "^\s*\S+\s+\S+\s+\S+\s*$" $DOMAIN/nmap >> $DOMAIN/report
 echo "Results for Dirsearch:" >> $DOMAIN/report
-cat $DOMAIN/dirsearch >> $DOMAIN/report
+cat $DOMAIN/dirsearch/$OUTPUT_FILE >> $DOMAIN/report
 echo "Results for crt.sh:" >> $DOMAIN/report
 jq -r ".[] | .name_value" $DOMAIN/crt >> $DOMAIN/report
