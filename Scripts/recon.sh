@@ -46,3 +46,12 @@ case $2 in
         crt_scan
     ;;
 esac
+
+echo "Generating Recon report from output file(s)."
+echo "This scan was created on $DATE > $DIRECTORY/report."
+echo "Results for Nmap:" >> $DIRECTORY/report
+grep -E "^\s*\S+\s+\S+\s+\S+\s*$" $DIRECTORY/nmap >> $DIRECTORY/report
+echo "Results for Dirsearch:" >> $DIRECTORY/report
+cat $DIRECTORY/dirsearch >> $DIRECTORY/report
+echo "Results for crt.sh:" >> $DIRECTORY/report
+jq -r ".[] | .name_value" $DIRECTORY/crt >> $DIRECTORY/report
