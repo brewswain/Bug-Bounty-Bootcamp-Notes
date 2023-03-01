@@ -14,7 +14,7 @@ mkdir -p $DIRSEARCH_DIRECTORY
 touch $DIRSEARCH_DIRECTORY/$OUTPUT_FILE
 echo "Creating Dirsearch Output file: $OUTPUT_FILE"
 echo "Creating Master Report subdirectory"
-mkdir $MASTER_REPORT_DIRECTORY
+mkdir -p $MASTER_REPORT_DIRECTORY
 
 nmap_scan()
 {
