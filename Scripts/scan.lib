@@ -1,0 +1,19 @@
+#!/bin/bash
+
+nmap_scan()
+{
+    echo "Using nmap takes a bit of time with no visible progress, the script isn't frozen (I hope)"
+    nmap $DOMAIN > $DOMAIN/nmap
+    echo "The results of nmap scan are stored in $DIRECTORY/nmap."
+}
+dirsearch_scan()
+{
+    
+    dirsearch -u $DOMAIN -e php --output=/home/kali/Desktop/Scripts/Recon/$DIRSEARCH_DIRECTORY/${OUTPUT_FILE} --format=plain
+    echo "The results of dirsearch scan are stored in $DIRSEARCH_DIRECTORY."
+}
+crt_scan()
+{
+    curl "https://crt.sh/?q=$DOMAIN&output=json" -o $DOMAIN/crt
+    echo "The results of cert parsing is stored in $DOMAIN/crt."
+}
