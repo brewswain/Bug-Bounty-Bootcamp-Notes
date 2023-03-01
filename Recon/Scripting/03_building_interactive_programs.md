@@ -38,3 +38,11 @@ while getopts "m:i" OPTION; do
     esac
 done
 ```
+
+Simple enough concept, we can now look for an `$INTERACTIVE` variable's state to decide if it's in interactive mode or not.
+
+Let's add all this stuff to our script now:
+
+```
+
+```
