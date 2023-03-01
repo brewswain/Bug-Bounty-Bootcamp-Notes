@@ -4,6 +4,7 @@ DATE=$(date +"%Y-%m-%d_%H-%M-%S")
 
 DIRSEARCH_DIRECTORY=$DOMAIN/dirsearch
 CRT_DIRECTORY=$DOMAIN/crt
+MASTER_REPORT_DIRECTORY=$DOMAIN/report
 OUTPUT_FILE=${DOMAIN}_${DATE}.txt
 
 echo "Creating directory $DOMAIN."
@@ -12,6 +13,8 @@ echo "Creating subdirectory $DIRSEARCH_DIRECTORY."
 mkdir -p $DIRSEARCH_DIRECTORY
 touch $DIRSEARCH_DIRECTORY/$OUTPUT_FILE
 echo "Creating Dirsearch Output file: $OUTPUT_FILE"
+echo "Creating Master Report subdirectory"
+mkdir $MASTER_REPORT_DIRECTORY
 
 nmap_scan()
 {
